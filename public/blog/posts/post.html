@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading... | Silvery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; color: #1a1a2e; line-height: 1.7; }
+    .post-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 3rem 1rem; text-align: center; }
+    .post-header a { color: white; text-decoration: none; opacity: 0.7; font-size: 0.9rem; }
+    .post-header a:hover { opacity: 1; }
+    .post-header h1 { font-size: 2rem; max-width: 800px; margin: 1rem auto 0.5rem; }
+    .post-header .meta { opacity: 0.8; font-size: 0.95rem; }
+    .container { max-width: 780px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .cover-img { width: 100%; max-height: 450px; object-fit: cover; border-radius: 12px; margin-bottom: 2rem; }
+    .post-content h2 { font-size: 1.5rem; margin: 2rem 0 0.75rem; }
+    .post-content h3 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
+    .post-content p { margin-bottom: 1rem; }
+    .post-content ul, .post-content ol { margin: 0 0 1rem 1.5rem; }
+    .post-content li { margin-bottom: 0.5rem; }
+    .post-content blockquote { border-left: 3px solid #667eea; padding: 0.75rem 1rem; margin: 1rem 0; background: #f0f4ff; border-radius: 0 8px 8px 0; }
+    .post-content a { color: #667eea; }
+    .post-content img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+    .loading { text-align: center; padding: 3rem; color: #666; }
+    @media (max-width: 600px) { .post-header h1 { font-size: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <div class="post-header">
+    <a href="/blog.html">&larr; Back to Blog</a>
+    <h1 id="post-title">Loading...</h1>
+    <div class="meta" id="post-meta"></div>
+  </div>
+  <div class="container">
+    <img id="cover-img" class="cover-img" style="display:none;">
+    <div class="post-content" id="post-content">
+      <div class="loading">Loading article...</div>
+    </div>
+  </div>
+  <script>
+    (async () => {
+      const slug = new URLSearchParams(window.location.search).get("slug");
+      if (!slug) { document.getElementById("post-content").innerHTML = "<p>Post not found.</p>"; return; }
+      try {
+        const res = await fetch(slug + ".json");
+        const post = await res.json();
+        document.title = post.title + " | Silvery";
+        document.getElementById("post-title").textContent = post.title;
+        document.getElementById("post-meta").textContent = (post.author || "Silvery") + " · " + (post.date || "") + " · " + (post.readTime || "");
+        if (post.coverImageUrl) {
+          var img = document.getElementById("cover-img");
+          img.src = post.coverImageUrl; img.alt = post.title; img.style.display = "block";
+        }
+        var c = post.content || "";
+        if (c.trim().charAt(0) !== "<") {
+          c = c.replace(/^######\s+(.+)$/gm,"<h6>$1</h6>").replace(/^#####\s+(.+)$/gm,"<h5>$1</h5>").replace(/^####\s+(.+)$/gm,"<h4>$1</h4>").replace(/^###\s+(.+)$/gm,"<h3>$1</h3>").replace(/^##\s+(.+)$/gm,"<h2>$1</h2>").replace(/^#\s+(.+)$/gm,"<h1>$1</h1>");
+          c = c.replace(/\*\*\*(.+?)\*\*\*/g,"<strong><em>$1</em></strong>").replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>");
+          c = c.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+          c = c.replace(/((?:^[\t ]*[-]\s+.+\n?)+)/gm,function(b){var i=b.trim().split("\n").map(function(l){return "<li>"+l.replace(/^[\t ]*[-]\s+/,"")+"</li>";}).join("");return "<ul>"+i+"</ul>";});
+          c = c.split("\n\n").map(function(b){b=b.trim();if(!b)return "";if(/^<(h[1-6]|ul|ol|table|blockquote|div|p)/i.test(b))return b;return "<p>"+b.replace(/\n/g,"<br>")+"</p>";}).join("");
+        }
+        document.getElementById("post-content").innerHTML = c;
+        if (post.schema) {
+          var s = document.createElement("script");
+          s.type = "application/ld+json";
+          s.textContent = JSON.stringify(post.schema);
+          document.head.appendChild(s);
+        }
+        var metaDesc = document.createElement("meta");
+        metaDesc.name = "description"; metaDesc.content = post.metaDescription || post.excerpt || "";
+        document.head.appendChild(metaDesc);
+      } catch (e) {
+        document.getElementById("post-content").innerHTML = "<p>Error loading post. Please try again.</p>";
+      }
+    })();
+  </script>
+</body>
+</html>
