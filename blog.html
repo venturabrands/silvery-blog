@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog | Silvery</title>
+  <meta name="description" content="Insights, tips, and expert advice from Silvery.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; color: #1a1a2e; line-height: 1.6; }
+    .blog-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 3rem 1rem; text-align: center; }
+    .blog-header h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
+    .blog-header p { opacity: 0.8; font-size: 1.1rem; }
+    .blog-header a { color: white; text-decoration: none; opacity: 0.7; font-size: 0.9rem; }
+    .blog-header a:hover { opacity: 1; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .filters button { padding: 0.5rem 1rem; border: 1px solid #ddd; background: white; border-radius: 2rem; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .filters button.active, .filters button:hover { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+    .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .post-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; }
+    .post-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .post-card img { width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .post-card .body { padding: 1.25rem; }
+    .post-card .category { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #667eea; margin-bottom: 0.5rem; }
+    .post-card h2 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .post-card h2 a { color: inherit; text-decoration: none; }
+    .post-card h2 a:hover { color: #667eea; }
+    .post-card .meta { font-size: 0.8rem; color: #666; margin-bottom: 0.75rem; }
+    .post-card .excerpt { font-size: 0.9rem; color: #444; }
+    .no-posts { text-align: center; padding: 3rem; color: #666; }
+    @media (max-width: 600px) { .posts-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="blog-header">
+    <a href="/">&larr; Back to Silvery</a>
+    <h1>Market Insights & Local Knowledge</h1>
+    <p>Expert tips and advice from Silvery</p>
+  </div>
+  <div class="container">
+    <div class="filters" id="filters"></div>
+    <div class="posts-grid" id="posts-grid"></div>
+    <div class="no-posts" id="no-posts" style="display:none;">No posts yet. Check back soon!</div>
+  </div>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("/public/blog/posts/posts-index.json");
+        const posts = await res.json();
+        if (!posts.length) { document.getElementById("no-posts").style.display = "block"; return; }
+        const cats = [...new Set(posts.map(p => p.category).filter(Boolean))];
+        const filtersEl = document.getElementById("filters");
+        const allBtn = document.createElement("button");
+        allBtn.textContent = "All"; allBtn.className = "active";
+        allBtn.onclick = () => render(posts);
+        filtersEl.appendChild(allBtn);
+        cats.forEach(cat => {
+          const btn = document.createElement("button");
+          btn.textContent = cat;
+          btn.onclick = () => render(posts.filter(p => p.category === cat));
+          filtersEl.appendChild(btn);
+        });
+        function render(list) {
+          filtersEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+          event.target.classList.add("active");
+          const grid = document.getElementById("posts-grid");
+          grid.innerHTML = list.map(p => {
+            var img = p.coverImageUrl ? '<img src="' + p.coverImageUrl + '" alt="' + p.title + '" loading="lazy">' : '<div style="height:200px;background:linear-gradient(135deg,#667eea,#764ba2);"></div>';
+            return '<div class="post-card">' + img + '<div class="body"><div class="category">' + (p.category || "Blog") + '</div><h2><a href="/public/blog/posts/post.html?slug=' + p.slug + '">' + p.title + '</a></h2><div class="meta">' + p.date + ' &middot; ' + (p.readTime || "5 min read") + '</div><p class="excerpt">' + (p.excerpt || "") + '</p></div></div>';
+          }).join("");
+        }
+        render(posts);
+      } catch (e) {
+        document.getElementById("no-posts").style.display = "block";
+      }
+    })();
+  </script>
+</body>
+</html>
